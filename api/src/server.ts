@@ -1,12 +1,9 @@
 import { fastify } from "fastify";
-import { prisma } from "./lib/prisma";
+import { getPromptsRoute } from "./routes/get-prompts";
 
 const api = fastify();
 
-api.get("/prompts", async () => {
-  const prompts = await prisma.prompt.findMany({});
-  return prompts;
-});
+api.register(getPromptsRoute);
 
 api
   .listen({
