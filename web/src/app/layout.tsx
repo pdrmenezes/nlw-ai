@@ -5,7 +5,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "NLW AI",
+  title: "nlw ai",
   description: "NLW event using OpenAI's API to generate title's and captions",
 };
 
