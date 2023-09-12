@@ -9,4 +9,6 @@ Projeto criado usando
 - Tailwind
 - Radix UI
 - Shadcn UI
+- Fastify
+- Node.js
   ...
