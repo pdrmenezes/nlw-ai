@@ -9,10 +9,22 @@ import { Textarea } from "@/components/ui/textarea";
 import VideoInputForm from "@/components/video-input-form";
 import { Github, Wand2 } from "lucide-react";
 import { useState } from "react";
+import { useCompletion } from "ai/react";
 
 export default function Home() {
   const [temperature, setTemperature] = useState(0.5);
-  function handlePromptSelect(template: string) {}
+  const [videoId, setVideoId] = useState<string | null>(null);
+
+  const { input, setInput, handleInputChange, handleSubmit, completion, isLoading } = useCompletion({
+    api: "http://localhost:3333/ai/generate",
+    body: {
+      videoId,
+      temperature,
+    },
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -21,6 +33,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">Desenvolvido com s2 no NLW da Rocketseat</span>
           <Separator orientation="vertical" className="h-6" />
+
           <Button variant="outline">
             <Github className="w-4 h-4 mr-2" />
             Github
@@ -30,8 +43,13 @@ export default function Home() {
       <main className="flex-1 p-6 flex gap-6">
         <section className="flex flex-col flex-1 gap-4">
           <div className="grid grid-rows-2 gap-4 flex-1">
-            <Textarea placeholder="Inclua o prompt para a IA..." className="resize-none p-4 leading-relaxed" />
-            <Textarea placeholder="Resultado gerado pela IA..." readOnly className="resize-none p-4 leading-relaxed" />
+            <Textarea
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Inclua o prompt para a IA..."
+              className="resize-none p-4 leading-relaxed"
+            />
+            <Textarea value={completion} placeholder="Resultado gerado pela IA..." readOnly className="resize-none p-4 leading-relaxed" />
           </div>
           <p className="text-sm text-muted-foreground">
             Lembre-se: você pode utilizar a variável <code className="text-violet-400">{"{transcription}"}</code> no seu prompt para adicionar o
@@ -39,12 +57,12 @@ export default function Home() {
           </p>
         </section>
         <aside className="w-80 space-y-6">
-          <VideoInputForm />
+          <VideoInputForm onVideoUploaded={setVideoId} />
           <Separator />
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label>Prompt</Label>
-              <PromptSelect onPromptSelect={handlePromptSelect} />
+              <PromptSelect onPromptSelect={setInput} />
             </div>
             <div className="space-y-2">
               <Label>Modelo</Label>
@@ -67,7 +85,7 @@ export default function Home() {
               </span>
             </div>
             <Separator />
-            <Button type="submit" className="w-full">
+            <Button disabled={isLoading} type="submit" className="w-full">
               Excecutar <Wand2 className="w-4 h-4 ml-2" />
             </Button>
           </form>

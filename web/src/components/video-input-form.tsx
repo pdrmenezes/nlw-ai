@@ -5,8 +5,8 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
-import { LoadFFmpeg } from "@/lib/ffmpeg";
-import { fetchFile } from "@ffmpeg/util";
+import { loadFFmpeg } from "@/lib/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { api } from "@/lib/axios";
 
 const UploadVideoStatusMessages = {
@@ -18,7 +18,11 @@ const UploadVideoStatusMessages = {
 };
 type UploadVideoStatus = keyof typeof UploadVideoStatusMessages;
 
-export default function VideoInputForm() {
+type VideoInputFormProps = {
+  onVideoUploaded: (videoId: string) => void;
+};
+
+export default function VideoInputForm({ onVideoUploaded }: VideoInputFormProps) {
   const [videoPreview, setVideoPreview] = useState<File | null>(null);
   const [uploadVideoStatus, setUploadVideoStatus] = useState<UploadVideoStatus>("Waiting");
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
@@ -29,10 +33,12 @@ export default function VideoInputForm() {
     if (!files) return;
 
     const selectedfile = files[0];
+    setVideoPreview(selectedfile);
   }
 
   async function convertVideoToAudio(video: File) {
-    const ffmpeg = await LoadFFmpeg();
+    const ffmpeg = await loadFFmpeg();
+
     // creating file on FFmpeg's filesystem
     await ffmpeg.writeFile("input.mp4", await fetchFile(video));
     // loggin the conversion progress from 0 to 100
@@ -44,7 +50,7 @@ export default function VideoInputForm() {
     // getting the outputed file and reading it from the WASM filesystem
     const data = await ffmpeg.readFile("output.mp3");
     // to convert the 'FileData' typed file to a Javascript 'File' first we have to turn it into a 'Blob'
-    const audioFileBlob = new Blob([data], { type: "audio/mpeg" });
+    const audioFileBlob = new Blob([data], { type: "audio/mp3" });
     // then, from the Blob we convert it to a File
     const audioFile = new File([audioFileBlob], "audio.mp3", { type: "audio/mpeg" });
 
@@ -64,17 +70,15 @@ export default function VideoInputForm() {
 
     const formData = new FormData();
     formData.append("file", audioFile);
-
     setUploadVideoStatus("Uploading");
     const response = await api.post("/videos", formData);
     const videoId = response.data.video.id;
-
     setUploadVideoStatus("Generating Transcription");
     await api.post(`/videos/${videoId}/transcription`, {
       prompt,
     });
-
     setUploadVideoStatus("Success");
+    onVideoUploaded(videoId);
   }
 
   const previewURL = useMemo(() => {

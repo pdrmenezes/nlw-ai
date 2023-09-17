@@ -4,7 +4,7 @@ import { toBlobURL } from "@ffmpeg/util";
 
 let ffmpeg: FFmpeg | null;
 
-export async function LoadFFmpeg() {
+export async function loadFFmpeg() {
   const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.2/dist/esm";
   if (ffmpeg) return ffmpeg;
 
