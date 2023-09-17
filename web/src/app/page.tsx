@@ -8,8 +8,10 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import VideoInputForm from "@/components/video-input-form";
 import { Github, Wand2 } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
+  const [temperature, setTemperature] = useState(0.5);
   function handlePromptSelect(template: string) {}
 
   return (
@@ -59,7 +61,7 @@ export default function Home() {
             <Separator />
             <div className="space-y-4">
               <Label>Temperatura</Label>
-              <Slider min={0} max={1} step={0.1} />
+              <Slider value={[temperature]} onValueChange={(value) => setTemperature(value[0])} min={0} max={1} step={0.1} />
               <span className="block text-xs text-muted-foreground italic leading-relaxed">
                 Valores mais altos tendem a deixar os resultados mais criativos e com maior possibilidade de erros
               </span>
