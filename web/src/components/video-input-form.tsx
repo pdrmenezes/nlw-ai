@@ -4,10 +4,13 @@ import { Separator } from "./ui/separator";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
+import { LoadFFmpeg } from "@/lib/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
 
 export default function VideoInputForm() {
   const [videoPreview, setVideoPreview] = useState<File | null>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
   function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
     const { files } = event.currentTarget;
@@ -17,6 +20,37 @@ export default function VideoInputForm() {
     const selectedfile = files[0];
   }
 
+  async function convertVideoToAudio(video: File) {
+    const ffmpeg = await LoadFFmpeg();
+    // creating file on FFmpeg's context
+    await ffmpeg.writeFile("input.mp4", await fetchFile(video));
+    // loggin the conversion progress from 0 to 100
+    ffmpeg.on("progress", (progress) => {
+      console.log("conversion progress: " + Math.round(progress.progress * 100));
+    });
+    // executing the convertion script with some parameter flags to get the first audio stream, setting the bitrate to 20k, chosing the codec, etc.
+    await ffmpeg.exec(["-i", "input.mp4", "-map", "0:a", "-b:a", "20k", "-acodec", "libmp3lame", "output.mp3"]);
+    // getting the outputed file
+    const data = await ffmpeg.readFile("output.mp3");
+    // to convert the 'FileData' typed file to a Javascript 'File' first we have to turn it into a 'Blob'
+    const audioFileBlob = new Blob([data], { type: "audio/mpeg" });
+    // then, from the Blob we convert it to a File
+    const audioFile = new File([audioFileBlob], "audio.mp3", { type: "audio/mpeg" });
+
+    console.log("Convertion finished");
+    return audioFile;
+  }
+
+  async function handleUploadVideo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const prompt = promptInputRef.current?.value;
+
+    if (!videoPreview) return;
+
+    const audioFile = await convertVideoToAudio(videoPreview);
+  }
+
   const previewURL = useMemo(() => {
     if (!videoPreview) return null;
 
@@ -24,7 +58,7 @@ export default function VideoInputForm() {
   }, [videoPreview]);
 
   return (
-    <form className="space-y-6">
+    <form className="space-y-6" onSubmit={handleUploadVideo}>
       <label
         htmlFor="video"
         className="border border-dashed text-sm flex flex-col gap-2 items-center justify-center text-muted-foreground rounded-md aspect-video cursor-pointer hover:bg-primary/5 relative"
@@ -43,6 +77,7 @@ export default function VideoInputForm() {
       <div className="space-y-2">
         <Label htmlFor="transcription_prompt">Prompt de transcrição</Label>
         <Textarea
+          ref={promptInputRef}
           id="transcription_prompt"
           className="h-20 leading-relaxed resize-none"
           placeholder="Inclua palavras-chave mencionadas no vídeo separadas por vírgula (,)"
