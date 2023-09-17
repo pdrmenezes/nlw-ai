@@ -1,5 +1,5 @@
 "use client";
-import { FileVideo, Upload } from "lucide-react";
+import { FileVideo, Loader2, Upload } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
@@ -9,8 +9,18 @@ import { LoadFFmpeg } from "@/lib/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { api } from "@/lib/axios";
 
+const UploadVideoStatusMessages = {
+  Waiting: "Carregar vídeo",
+  Converting: "Convertendo",
+  Uploading: "Carregando",
+  "Generating Transcription": "Gerando transcrição",
+  Success: "Sucesso!",
+};
+type UploadVideoStatus = keyof typeof UploadVideoStatusMessages;
+
 export default function VideoInputForm() {
   const [videoPreview, setVideoPreview] = useState<File | null>(null);
+  const [uploadVideoStatus, setUploadVideoStatus] = useState<UploadVideoStatus>("Success");
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
   function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
@@ -49,17 +59,22 @@ export default function VideoInputForm() {
 
     if (!videoPreview) return;
 
+    setUploadVideoStatus("Converting");
     const audioFile = await convertVideoToAudio(videoPreview);
 
     const formData = new FormData();
     formData.append("file", audioFile);
 
+    setUploadVideoStatus("Uploading");
     const response = await api.post("/videos", formData);
     const videoId = response.data.video.id;
 
+    setUploadVideoStatus("Generating Transcription");
     await api.post(`/videos/${videoId}/transcription`, {
       prompt,
     });
+
+    setUploadVideoStatus("Success");
   }
 
   const previewURL = useMemo(() => {
@@ -89,13 +104,20 @@ export default function VideoInputForm() {
         <Label htmlFor="transcription_prompt">Prompt de transcrição</Label>
         <Textarea
           ref={promptInputRef}
+          disabled={uploadVideoStatus !== "Waiting"}
           id="transcription_prompt"
           className="h-20 leading-relaxed resize-none"
           placeholder="Inclua palavras-chave mencionadas no vídeo separadas por vírgula (,)"
         />
       </div>
-      <Button type="submit" className="w-full">
-        Carregar vídeo <Upload className="h-4 w-4 ml-2" />
+      <Button
+        disabled={uploadVideoStatus !== "Waiting"}
+        type="submit"
+        className="w-full data-[success=true]:bg-emerald-400"
+        data-success={uploadVideoStatus === "Success"}
+      >
+        {UploadVideoStatusMessages[uploadVideoStatus]} {uploadVideoStatus === "Waiting" && <Upload className="h-4 w-4 ml-2" />}{" "}
+        {uploadVideoStatus !== "Waiting" && uploadVideoStatus !== "Success" && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
       </Button>
     </form>
   );
