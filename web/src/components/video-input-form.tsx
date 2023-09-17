@@ -20,7 +20,7 @@ type UploadVideoStatus = keyof typeof UploadVideoStatusMessages;
 
 export default function VideoInputForm() {
   const [videoPreview, setVideoPreview] = useState<File | null>(null);
-  const [uploadVideoStatus, setUploadVideoStatus] = useState<UploadVideoStatus>("Success");
+  const [uploadVideoStatus, setUploadVideoStatus] = useState<UploadVideoStatus>("Waiting");
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
   function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
@@ -33,7 +33,7 @@ export default function VideoInputForm() {
 
   async function convertVideoToAudio(video: File) {
     const ffmpeg = await LoadFFmpeg();
-    // creating file on FFmpeg's context
+    // creating file on FFmpeg's filesystem
     await ffmpeg.writeFile("input.mp4", await fetchFile(video));
     // loggin the conversion progress from 0 to 100
     ffmpeg.on("progress", (progress) => {
@@ -41,7 +41,7 @@ export default function VideoInputForm() {
     });
     // executing the convertion script with some parameter flags to get the first audio stream, setting the bitrate to 20k, chosing the codec, etc.
     await ffmpeg.exec(["-i", "input.mp4", "-map", "0:a", "-b:a", "20k", "-acodec", "libmp3lame", "output.mp3"]);
-    // getting the outputed file
+    // getting the outputed file and reading it from the WASM filesystem
     const data = await ffmpeg.readFile("output.mp3");
     // to convert the 'FileData' typed file to a Javascript 'File' first we have to turn it into a 'Blob'
     const audioFileBlob = new Blob([data], { type: "audio/mpeg" });

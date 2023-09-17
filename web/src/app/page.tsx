@@ -1,3 +1,5 @@
+"use client";
+import PromptSelect from "@/components/prompt-select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +10,8 @@ import VideoInputForm from "@/components/video-input-form";
 import { Github, Wand2 } from "lucide-react";
 
 export default function Home() {
+  function handlePromptSelect(template: string) {}
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="px-6 py-3 flex items-center justify-between border-b">
@@ -38,23 +42,7 @@ export default function Home() {
           <form className="space-y-6">
             <div className="space-y-2">
               <Label>Prompt</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um prompt..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="title">Título do YouTube</SelectItem>
-                  <SelectItem value="description">Descrição do YouTube</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Separator />
-            <div className="space-y-4">
-              <Label>Temperatura</Label>
-              <Slider min={0} max={1} step={0.1} />
-              <span className="block text-xs text-muted-foreground italic leading-relaxed">
-                Valores mais altos tendem a deixar os resultados mais criativos e com maior possibilidade de erros
-              </span>
+              <PromptSelect onPromptSelect={handlePromptSelect} />
             </div>
             <div className="space-y-2">
               <Label>Modelo</Label>
